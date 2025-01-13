@@ -5,13 +5,11 @@ from langchain_community.llms import HuggingFacePipeline
 from langchain.chains import RetrievalQA
 from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM, pipeline
 
-
 def main():
 
     hbert_path = "heBERT"
     hebrew_gemma_path = "Hebrew-Gemma-11B-V2"
 
-    # 2. Load H-BERT as Embeddings
     print("Loading H-BERT embeddings model...")
     hbert_tokenizer = AutoTokenizer.from_pretrained(hbert_path)
     hbert_model = AutoModel.from_pretrained(hbert_path)
@@ -24,28 +22,23 @@ def main():
         "זהו מסמך שלישי על ספורט וכדורגל בישראל."
     ]
 
-    # 4. Create (or load) a FAISS Index
     print("Creating FAISS index...")
     faiss_index = FAISS.from_texts(texts=documents, embedding=embeddings)
 
-     # 5. Load Hebrew-Gemma-11B-V2 for Generation
     print("Loading Hebrew-Gemma LLM...")
     gemma_tokenizer = AutoTokenizer.from_pretrained(hebrew_gemma_path)
     gemma_model = AutoModelForCausalLM.from_pretrained(hebrew_gemma_path,
         device_map="auto",
         low_cpu_mem_usage=True)
 
-     # 6. Create a text-generation pipeline using transformers
     generation_pipeline = pipeline(
         "text-generation",
         model=gemma_model,
         tokenizer=gemma_tokenizer,
     )
     
-    # 7. Wrap the pipeline in a LangChain LLM
     llm = HuggingFacePipeline(pipeline=generation_pipeline)
     
-    # 8. Create a RetrievalQA chain
     retriever = faiss_index.as_retriever()
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
@@ -53,7 +46,6 @@ def main():
         return_source_documents=True
     )
     
-    # 9. Run a query through the chain
     query = "מהו המידע החשוב ביותר על ישראל במסמכים?"
     print(f"\nUser Query: {query}")
     
